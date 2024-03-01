@@ -302,6 +302,17 @@ Index
 
 #### 为什么训练时不采用移动平均？
 > 群里一位同学的面试题
+> 在训练神经网络时，不能简单地使用移动平均值进行归一化的原因主要有以下几点：
+
+梯度与归一化的冲突：使用移动平均值进行归一化可能会与梯度优化产生冲突。梯度下降的目的是通过调整模型参数来最小化损失函数。如果归一化操作通过移动平均值来消除数据分布的变化，那么这些变化可能已经被模型学习并反映在梯度中。如果归一化抵消了这些梯度带来的变化，那么模型可能会无法有效地学习，甚至可能导致参数的无限制增长。
+
+小批量效应：神经网络训练通常使用小批量随机梯度下降（Mini-Batch Stochastic Gradient Descent）来加速收敛和提高泛化性能。小批量数据中的统计信息（如均值和标准差）反映了当前批次数据的分布特性。使用这些统计信息进行归一化有助于模型适应当前批次的数据分布，从而更有效地学习。
+
+动态适应性：训练过程中的数据分布通常会随着模型的更新而变化。使用小批量统计信息可以让归一化层动态地适应这些变化，保持数据的分布相对稳定。如果采用移动平均值，归一化层可能会变得过于僵硬，无法灵活应对数据分布的变化。
+
+计算效率：在训练过程中，使用小批量统计信息进行归一化可以直接在GPU等硬件上实现高效的并行计算。而使用移动平均值则可能需要额外的存储和计算资源来维护平均值和方差的估计。
+
+综上所述，虽然使用移动平均值进行归一化在某些情况下可能看似方便，但在神经网络训练中，使用小批量统计信息进行归一化并反向传播是更为有效和稳定的方法。
 - 使用 BN 的目的就是为了保证每批数据的分布稳定，使用全局统计量反而违背了这个初衷；
 - BN 的作者认为在训练时采用移动平均可能会与梯度优化存在冲突；
     > 【**原文**】"It is natural to ask whether we could simply **use the moving averages** µ, σ to perform the normalization **during training**, since this would remove the dependence of the normalized activations on the other example in the minibatch. This, however, has been observed to lead to the model blowing up. As argued in [6], such use of moving averages would cause the gradient optimization and the normalization to counteract each other. For example, the gradient step may increase a bias or scale the convolutional weights, in spite of the fact that the normalization would cancel the effect of these changes on the loss. This would result in unbounded growth of model parameters without actually improving the loss. It is thus crucial to use the minibatch moments, and to backpropagate through them."
